@@ -1,5 +1,5 @@
 <?php
-namespace GuzzleHttp\Test\Handler;
+namespace GuzzleHttp\Tests\Handler;
 
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Promise\PromiseInterface;

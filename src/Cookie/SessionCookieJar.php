@@ -66,6 +66,7 @@ class SessionCookieJar extends CookieJar
                 $this->setCookie(new SetCookie($cookie));
             }
         } elseif (strlen($data)) {
+//            var_dump($cookieJar, $data);
             throw new \RuntimeException("Invalid cookie data");
         }
     }

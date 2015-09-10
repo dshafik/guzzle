@@ -1,5 +1,5 @@
 <?php
-namespace GuzzleHttp\Test;
+namespace GuzzleHttp\Tests;
 
 use GuzzleHttp;
 
@@ -31,7 +31,7 @@ class FunctionsTest extends \PHPUnit_Framework_TestCase
             [false, 'bool(false)'],
             [10, 'int(10)'],
             [1.0, 'float(1)'],
-            [new StrClass(), 'object(GuzzleHttp\Test\StrClass)'],
+            [new StrClass(), 'object(GuzzleHttp\Tests\StrClass)'],
             [['foo'], 'array(1)']
         ];
     }

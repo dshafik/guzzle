@@ -12,6 +12,8 @@ use GuzzleHttp\MessageFormatter;
  */
 class MessageFormatterTest extends \PHPUnit_Framework_TestCase
 {
+    use CurlOptTrait;
+    
     public function testCreatesWithClfByDefault()
     {
         $f = new MessageFormatter();

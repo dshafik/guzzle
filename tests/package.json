@@ -1,0 +1,6 @@
+{
+  "name": "guzzlehttp-tests",
+  "dependencies": {
+    "http2": "^3.2.0"
+  }
+}

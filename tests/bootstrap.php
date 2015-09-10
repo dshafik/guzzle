@@ -1,10 +1,7 @@
 <?php
 namespace GuzzleHttp\Test {
     require __DIR__ . '/../vendor/autoload.php';
-    require __DIR__ . '/Server.php';
-    use GuzzleHttp\Tests\Server;
-    Server::start();
-    register_shutdown_function(function () { Server::stop(); });
+    register_shutdown_function([\GuzzleHttp\Tests\Server::class, 'stop']);
 }
 
 // Override curl_setopt_array() to get the last set curl options

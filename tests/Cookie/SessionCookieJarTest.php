@@ -1,6 +1,10 @@
 <?php
 namespace GuzzleHttp\Tests\CookieJar;
 
+set_exception_handler(function (...$args) {
+    var_dump($args);
+});
+
 use GuzzleHttp\Cookie\SessionCookieJar;
 use GuzzleHttp\Cookie\SetCookie;
 
@@ -10,6 +14,8 @@ use GuzzleHttp\Cookie\SetCookie;
 class SessionCookieJarTest extends \PHPUnit_Framework_TestCase
 {
     private $sessionVar;
+    
+    use \GuzzleHttp\Tests\ServerTrait;
 
     public function setUp()
     {

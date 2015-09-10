@@ -38,8 +38,8 @@
  * @license See the LICENSE file that was distributed with this source code.
  */
 
-var http = require('http');
 var url = require('url');
+var fs = require('fs');
 
 /**
  * Guzzle node.js server
@@ -199,9 +199,7 @@ var GuzzleServer = function(port, log) {
   };
 
   this.start = function() {
-
-    that.server = http.createServer(function(req, res) {
-
+    var requestListener = function(req, res) {
       var parts = url.parse(req.url, false);
       var request = {
         http_method: req.method,
@@ -222,20 +220,37 @@ var GuzzleServer = function(port, log) {
       req.addListener('end', function() {
         firewallRequest(request, req, res, receivedRequest);
       });
-    });
+    };
+
+    if (version < 2) {
+      var http = require('http');
+      that.server = http.createServer(requestListener);
+    } else {
+      var http = require('http2');
+      var options = {
+        key: fs.readFileSync(__dirname + '/node_modules/http2/example/localhost.key'),
+        cert: fs.readFileSync(__dirname + '/node_modules/http2/example/localhost.crt')
+      };
+      that.server = http.createServer(options, requestListener);
+    }
 
     that.server.listen(this.port, '127.0.0.1');
 
     if (this.log) {
-      console.log('Server running at http://127.0.0.1:8126/');
+      console.log('HTTP/' + version + ' Server running at ' + ((version == 2) ? 'https' : 'http') + '://127.0.0.1:' + this.port + '/');
     }
   };
 };
 
 // Get the port from the arguments
-port = process.argv.length >= 3 ? process.argv[2] : 8126;
-log = process.argv.length >= 4 ? process.argv[3] : false;
+console.log("Arg[3]" + process.argv[3]);
+version = process.argv.length >= 3 ? process.argv[2] : 1.1;
+port = process.argv.length >= 4 ? process.argv[3] : 8126;
+log = process.argv.length >= 5 ? process.argv[4] : false;
 
 // Start the server
+console.log("Version: " + version);
+console.log("Port: " + port);
+console.log("log: " + log);
 server = new GuzzleServer(port, log);
 server.start();

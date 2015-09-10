@@ -5,14 +5,17 @@ use GuzzleHttp\Handler\CurlMultiHandler;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Tests\Server;
+use GuzzleHttp\Tests\ServerTrait;
 
 class CurlMultiHandlerTest extends \PHPUnit_Framework_TestCase
 {
+    use ServerTrait;
+    
     public function testSendsRequest()
     {
         Server::enqueue([new Response()]);
         $a = new CurlMultiHandler();
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         $response = $a($request, [])->wait();
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -41,7 +44,7 @@ class CurlMultiHandlerTest extends \PHPUnit_Framework_TestCase
         $a = new CurlMultiHandler();
         $responses = [];
         for ($i = 0; $i < 10; $i++) {
-            $response = $a(new Request('GET', Server::$url), []);
+            $response = $a(new Request('GET', Server::getUrl()), []);
             $response->cancel();
             $responses[] = $response;
         }
@@ -52,7 +55,7 @@ class CurlMultiHandlerTest extends \PHPUnit_Framework_TestCase
         Server::flush();
         Server::enqueue([new Response(200)]);
         $a = new CurlMultiHandler();
-        $response = $a(new Request('GET', Server::$url), []);
+        $response = $a(new Request('GET', Server::getUrl()), []);
         $response->wait();
         $response->cancel();
     }
@@ -63,7 +66,7 @@ class CurlMultiHandlerTest extends \PHPUnit_Framework_TestCase
         Server::enqueue([new Response()]);
         $a = new CurlMultiHandler();
         $expected = microtime(true) + (100 / 1000);
-        $response = $a(new Request('GET', Server::$url), ['delay' => 100]);
+        $response = $a(new Request('GET', Server::getUrl()), ['delay' => 100]);
         $response->wait();
         $this->assertGreaterThanOrEqual($expected, microtime(true));
     }

@@ -2,9 +2,16 @@
 <phpunit bootstrap="./tests/bootstrap.php"
          colors="true">
   <testsuites>
-    <testsuite>
+    <testsuite name="HTTP/1.x Test Suite">
       <directory>tests</directory>
+      <exclude>tests/Http2</exclude>
     </testsuite>
+    <testsuite name="HTTP/2 Test Suite">
+      <directory>tests/Http2</directory>
+    </testsuite>
+    <!--<testsuite name="All Tests">-->
+      <!--<directory>tests</directory>-->
+    <!--</testsuite>-->
   </testsuites>
   <filter>
     <whitelist>

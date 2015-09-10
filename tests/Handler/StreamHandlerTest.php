@@ -1,5 +1,5 @@
 <?php
-namespace GuzzleHttp\Test\Handler;
+namespace GuzzleHttp\Tests\Handler;
 
 use GuzzleHttp\Handler\StreamHandler;
 use GuzzleHttp\Psr7;
@@ -7,6 +7,7 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\FnStream;
 use GuzzleHttp\Tests\Server;
+use GuzzleHttp\Tests\ServerTrait;
 use GuzzleHttp\TransferStats;
 use Psr\Http\Message\ResponseInterface;
 
@@ -15,6 +16,8 @@ use Psr\Http\Message\ResponseInterface;
  */
 class StreamHandlerTest extends \PHPUnit_Framework_TestCase
 {
+    use ServerTrait;
+    
     private function queueRes()
     {
         Server::flush();
@@ -31,7 +34,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         $this->queueRes();
         $handler = new StreamHandler();
         $response = $handler(
-            new Request('GET', Server::$url, ['Foo' => 'Bar']),
+            new Request('GET', Server::getUrl(), ['Foo' => 'Bar']),
             []
         )->wait();
         $this->assertEquals(200, $response->getStatusCode());
@@ -64,7 +67,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         $handler = new StreamHandler();
         $request = new Request(
             'PUT',
-            Server::$url . 'foo?baz=bar',
+            Server::getUrl() . 'foo?baz=bar',
             ['Foo' => 'Bar'],
             'test'
         );
@@ -89,7 +92,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $this->queueRes();
         $handler = new StreamHandler();
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         $response = $handler($request, [])->wait();
         $body = $response->getBody();
         $stream = $body->detach();
@@ -103,7 +106,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         $r = fopen('php://temp', 'r+');
         $this->queueRes();
         $handler = new StreamHandler();
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         $response = $handler($request, ['sink' => $r])->wait();
         $body = $response->getBody()->detach();
         $this->assertEquals('php://temp', stream_get_meta_data($body)['uri']);
@@ -117,7 +120,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         $tmpfname = tempnam('/tmp', 'save_to_path');
         $this->queueRes();
         $handler = new StreamHandler();
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         $response = $handler($request, ['sink' => $tmpfname])->wait();
         $body = $response->getBody();
         $this->assertEquals($tmpfname, $body->getMetadata('uri'));
@@ -137,7 +140,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
             ], $content)
         ]);
         $handler = new StreamHandler();
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         $response = $handler($request, ['decode_content' => true])->wait();
         $this->assertEquals('test', (string) $response->getBody());
         $this->assertFalse($response->hasHeader('content-encoding'));
@@ -155,7 +158,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
             ], $content)
         ]);
         $handler = new StreamHandler();
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         $response = $handler($request, ['decode_content' => false])->wait();
         $this->assertSame($content, (string) $response->getBody());
         $this->assertEquals('gzip', $response->getHeaderLine('content-encoding'));
@@ -166,7 +169,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $this->queueRes();
         $handler = new StreamHandler();
-        $request = new Request('GET', Server::$url, [], null, '1.0');
+        $request = new Request('GET', Server::getUrl(), [], null, '1.0');
         $handler($request, []);
         $this->assertEquals('1.0', Server::received()[0]->getProtocolVersion());
     }
@@ -176,7 +179,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         $this->queueRes();
         $handler = new StreamHandler();
         $opts['stream'] = true;
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         return $handler($request, $opts)->wait();
     }
 
@@ -191,7 +194,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
 
     public function testAddsProxyByProtocol()
     {
-        $url = str_replace('http', 'tcp', Server::$url);
+        $url = str_replace('http', 'tcp', Server::getUrl());
         $res = $this->getSendResult(['proxy' => ['http' => $url]]);
         $opts = stream_context_get_options($res->getBody()->detach());
         $this->assertEquals($url, $opts['http']['proxy']);
@@ -199,7 +202,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
 
     public function testAddsProxyButHonorsNoProxy()
     {
-        $url = str_replace('http', 'tcp', Server::$url);
+        $url = str_replace('http', 'tcp', Server::getUrl());
         $res = $this->getSendResult(['proxy' => [
             'http' => $url,
             'no'   => ['*']
@@ -374,7 +377,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $this->queueRes();
         $handler = new StreamHandler();
-        $request = new Request('PUT', Server::$url, ['Content-Length' => 3], 'foo');
+        $request = new Request('PUT', Server::getUrl(), ['Content-Length' => 3], 'foo');
         $handler($request, []);
         $req = Server::received()[0];
         $this->assertEquals('', $req->getHeaderLine('Content-Type'));
@@ -385,7 +388,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $this->queueRes();
         $handler = new StreamHandler();
-        $request = new Request('PUT', Server::$url, [], 'foo');
+        $request = new Request('PUT', Server::getUrl(), [], 'foo');
         $handler($request, []);
         $req = Server::received()[0];
         $this->assertEquals(3, $req->getHeaderLine('Content-Length'));
@@ -395,7 +398,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $this->queueRes();
         $handler = new StreamHandler();
-        $request = new Request('PUT', Server::$url, [], '');
+        $request = new Request('PUT', Server::getUrl(), [], '');
         $handler($request, []);
         $req = Server::received()[0];
         $this->assertEquals(0, $req->getHeaderLine('Content-Length'));
@@ -406,7 +409,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         Server::flush();
         $response = new Response(200, ['Test' => 'Hello', 'Content-Length' => '4'], 'test');
         Server::enqueue([$response]);
-        $request = new Request('PUT', Server::$url, ['Expect' => '100-Continue'], 'test');
+        $request = new Request('PUT', Server::getUrl(), ['Expect' => '100-Continue'], 'test');
         $handler = new StreamHandler();
         $response = $handler($request, [])->wait();
         $this->assertEquals(200, $response->getStatusCode());
@@ -420,7 +423,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         $response = new response(200);
         Server::enqueue([$response]);
         $a = new StreamHandler();
-        $request = new Request('GET', Server::$url);
+        $request = new Request('GET', Server::getUrl());
         $s = microtime(true);
         $a($request, ['delay' => 0.1])->wait();
         $this->assertGreaterThan(0.0001, microtime(true) - $s);
@@ -431,7 +434,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
      */
     public function testEnsuresOnHeadersIsCallable()
     {
-        $req = new Request('GET', Server::$url);
+        $req = new Request('GET', Server::getUrl());
         $handler = new StreamHandler();
         $handler($req, ['on_headers' => 'error!']);
     }
@@ -447,7 +450,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         Server::enqueue([
             new Response(200, ['X-Foo' => 'bar'], 'abc 123')
         ]);
-        $req = new Request('GET', Server::$url);
+        $req = new Request('GET', Server::getUrl());
         $handler = new StreamHandler();
         $promise = $handler($req, [
             'on_headers' => function () {
@@ -463,7 +466,7 @@ class StreamHandlerTest extends \PHPUnit_Framework_TestCase
         Server::enqueue([
             new Response(200, ['X-Foo' => 'bar'], 'abc 123')
         ]);
-        $req = new Request('GET', Server::$url);
+        $req = new Request('GET', Server::getUrl());
         $got = null;
 
         $stream = Psr7\stream_for();

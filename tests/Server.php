@@ -21,11 +21,15 @@ use Psr\Http\Message\ResponseInterface;
  */
 class Server
 {
+    const HTTP_VERSION_1_1 = '1.1';
+    const HTTP_VERSION_2 = '2';
+    
     /** @var Client */
     private static $client;
-    private static $started = false;
-    public static $url = 'http://127.0.0.1:8126/';
-    public static $port = 8126;
+    private static $started = [];
+    private static $version = self::HTTP_VERSION_1_1;
+    public static $url = [self::HTTP_VERSION_1_1 => 'http://127.0.0.1:8126/', self::HTTP_VERSION_2 => 'https://127.0.0.1:8127'];
+    public static $port = [self::HTTP_VERSION_1_1 => 8126, self::HTTP_VERSION_2 => 8127];
 
     /**
      * Flush the received requests from the server
@@ -78,7 +82,7 @@ class Server
      */
     public static function received()
     {
-        if (!self::$started) {
+        if (isset(self::$started[self::$version]) && !self::$started[self::$version]) {
             return [];
         }
 
@@ -113,11 +117,13 @@ class Server
      */
     public static function stop()
     {
-        if (self::$started) {
-            self::getClient()->request('DELETE', 'guzzle-server');
+        foreach (self::$url as $version => $url) {
+            self::setVersion($version);
+            if (isset(self::$started[self::$version]) && self::$started[self::$version]) {
+                self::getClient()->request('DELETE', 'guzzle-server');
+            }
+            self::$started[self::$version] = false;
         }
-
-        self::$started = false;
     }
 
     public static function wait($maxTries = 5)
@@ -128,23 +134,38 @@ class Server
         }
 
         if (!self::isListening()) {
-            throw new \RuntimeException('Unable to contact node.js server');
+            throw new \RuntimeException('Unable to contact node.js server at ' . Server::getUrl());
         }
     }
 
     public static function start()
     {
-        if (self::$started) {
+        if (isset(self::$started[self::$version]) && self::$started[self::$version]) {
             return;
         }
-
+        
         if (!self::isListening()) {
             exec('node ' . __DIR__ . '/server.js '
-                . self::$port . ' >> /tmp/server.log 2>&1 &');
+                . self::$version . ' ' . self::$port[self::$version] . ' /tmp/server.log >> /tmp/server.log 2>&1 &');
             self::wait();
         }
+        
+        self::$started[self::$version] = true;
+    }
+    
+    public static function setVersion($version)
+    {
+        self::$version = $version;
+    }
+    
+    public static function getPort()
+    {
+        return self::$port[self::$version];
+    }
 
-        self::$started = true;
+    public static function getUrl()
+    {
+        return self::$url[self::$version];
     }
 
     private static function isListening()
@@ -152,7 +173,7 @@ class Server
         try {
             self::getClient()->request('GET', 'guzzle-server/perf', [
                 'connect_timeout' => 5,
-                'timeout'         => 5
+                'timeout'         => 5,
             ]);
             return true;
         } catch (\Exception $e) {
@@ -163,10 +184,13 @@ class Server
     private static function getClient()
     {
         if (!self::$client) {
-            self::$client = new Client([
-                'base_uri' => self::$url,
+            $options = [
+                'base_uri' => self::$url[self::$version],
                 'sync'     => true,
-            ]);
+                'verify'   => false,
+            ];
+            
+            self::$client = new Client($options);
         }
 
         return self::$client;
